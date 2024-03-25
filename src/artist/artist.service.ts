@@ -5,38 +5,41 @@ import {
 } from '@nestjs/common';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
-import { artists } from './entities/artist.entity';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ArtistService {
-  create(createArtistDto: CreateArtistDto) {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createArtistDto: CreateArtistDto) {
     if (
       'name' in createArtistDto &&
       createArtistDto.name &&
       'grammy' in createArtistDto &&
       typeof createArtistDto.grammy === 'boolean'
     ) {
-      const id = uuidv4();
-      artists[id] = {
-        id: id,
-        name: createArtistDto.name,
-        grammy: createArtistDto.grammy,
-      };
-      return artists[id];
+      return await this.prisma.artist.create({
+        data: {
+          id: uuidv4(),
+          name: createArtistDto.name,
+          grammy: createArtistDto.grammy,
+        },
+      });
     } else {
       throw new BadRequestException('Request is not correct');
     }
   }
 
-  findAll() {
-    return Object.values(artists);
+  async findAll() {
+    return await this.prisma.artist.findMany();
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     if (uuidValidate(id)) {
-      if (id in artists) {
-        return artists[id];
+      const track = await this.prisma.artist.findUnique({ where: { id: id } });
+      if (track) {
+        return track;
       } else {
         throw new NotFoundException('Artist is not found');
       }
@@ -45,41 +48,46 @@ export class ArtistService {
     }
   }
 
-  update(id: string, updateArtistDto: UpdateArtistDto) {
+  async update(id: string, updateArtistDto: UpdateArtistDto) {
     if (
       'name' in updateArtistDto &&
       updateArtistDto.name &&
       'grammy' in updateArtistDto &&
       typeof updateArtistDto.grammy === 'boolean'
     ) {
-      if (uuidValidate(id)) {
-        if (id in artists) {
-          artists[id] = {
+      const artist = await this.prisma.artist.findUnique({ where: { id: id } });
+      if (artist) {
+        return await this.prisma.artist.update({
+          where: {
             id: id,
+          },
+          data: {
             name: updateArtistDto.name,
             grammy: updateArtistDto.grammy,
-          };
-          return artists[id];
-        } else {
-          throw new NotFoundException('Artist is not found');
-        }
+          },
+        });
       } else {
-        throw new BadRequestException('Artist id is not correct');
+        throw new NotFoundException('Artist is not found');
       }
     } else {
       throw new BadRequestException('Request is not correct');
     }
   }
 
-  remove(id: string) {
+  async remove(id: string) {
     if (uuidValidate(id)) {
-      if (id in artists) {
-        delete artists[id];
+      const artist = await this.prisma.artist.findUnique({ where: { id: id } });
+      if (artist) {
+        return await this.prisma.artist.delete({
+          where: {
+            id: id,
+          },
+        });
       } else {
         throw new NotFoundException('Artist is not found');
       }
     } else {
-      throw new BadRequestException('Artist id is not correct');
+      throw new BadRequestException('Request id is not correct');
     }
   }
 }

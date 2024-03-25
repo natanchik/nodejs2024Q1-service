@@ -3,9 +3,3 @@ export class Fav {
   albums: string[] = []; // favorite albums ids
   tracks: string[] = []; // favorite tracks ids
 }
-
-export const favs: Fav = {
-  artists: [],
-  albums: [],
-  tracks: [],
-};

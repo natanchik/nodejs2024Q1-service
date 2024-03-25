@@ -5,39 +5,42 @@ import {
 } from '@nestjs/common';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
-import { albums } from './entities/album.entity';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AlbumService {
-  create(createAlbumDto: CreateAlbumDto) {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createAlbumDto: CreateAlbumDto) {
     if (
       'name' in createAlbumDto &&
       createAlbumDto.name &&
       'year' in createAlbumDto &&
       typeof createAlbumDto.year === 'number'
     ) {
-      const id = uuidv4();
-      albums[id] = {
-        id: id,
-        name: createAlbumDto.name,
-        year: createAlbumDto.year,
-        artistId: createAlbumDto.artistId ? createAlbumDto.artistId : null,
-      };
-      return albums[id];
+      return await this.prisma.album.create({
+        data: {
+          id: uuidv4(),
+          name: createAlbumDto.name,
+          year: createAlbumDto.year,
+          artistId: createAlbumDto.artistId ? createAlbumDto.artistId : null,
+        },
+      });
     } else {
       throw new BadRequestException('Request is not correct');
     }
   }
 
-  findAll() {
-    return Object.values(albums);
+  async findAll() {
+    return await this.prisma.album.findMany();
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     if (uuidValidate(id)) {
-      if (id in albums) {
-        return albums[id];
+      const album = await this.prisma.album.findUnique({ where: { id: id } });
+      if (album) {
+        return album;
       } else {
         throw new NotFoundException('Album is not found');
       }
@@ -46,42 +49,47 @@ export class AlbumService {
     }
   }
 
-  update(id: string, updateAlbumDto: UpdateAlbumDto) {
+  async update(id: string, updateAlbumDto: UpdateAlbumDto) {
     if (
       'name' in updateAlbumDto &&
       updateAlbumDto.name &&
       'year' in updateAlbumDto &&
       typeof updateAlbumDto.year === 'number'
     ) {
-      if (uuidValidate(id)) {
-        if (id in albums) {
-          albums[id] = {
+      const album = await this.prisma.album.findUnique({ where: { id: id } });
+      if (album) {
+        return await this.prisma.album.update({
+          where: {
             id: id,
+          },
+          data: {
             name: updateAlbumDto.name,
             year: updateAlbumDto.year,
             artistId: updateAlbumDto.artistId ? updateAlbumDto.artistId : null,
-          };
-          return albums[id];
-        } else {
-          throw new NotFoundException('Album is not found');
-        }
+          },
+        });
       } else {
-        throw new BadRequestException('Album id is not correct');
+        throw new NotFoundException('Album is not found');
       }
     } else {
       throw new BadRequestException('Request is not correct');
     }
   }
 
-  remove(id: string) {
+  async remove(id: string) {
     if (uuidValidate(id)) {
-      if (id in albums) {
-        delete albums[id];
+      const album = await this.prisma.album.findUnique({ where: { id: id } });
+      if (album) {
+        return await this.prisma.album.delete({
+          where: {
+            id: id,
+          },
+        });
       } else {
         throw new NotFoundException('Album is not found');
       }
     } else {
-      throw new BadRequestException('Album id is not correct');
+      throw new BadRequestException('Request id is not correct');
     }
   }
 }

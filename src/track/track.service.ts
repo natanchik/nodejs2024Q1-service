@@ -5,40 +5,44 @@ import {
 } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
-import { tracks } from './entities/track.entity';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class TrackService {
-  create(createTrackDto: CreateTrackDto) {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createTrackDto: CreateTrackDto) {
     if (
       'name' in createTrackDto &&
       createTrackDto.name &&
       'duration' in createTrackDto &&
       typeof createTrackDto.duration === 'number'
     ) {
-      const id = uuidv4();
-      tracks[id] = {
-        id: id,
-        name: createTrackDto.name,
-        artistId: createTrackDto.artistId || null, // refers to Artist
-        albumId: createTrackDto.albumId || null, // refers to Album
-        duration: createTrackDto.duration, // integer number
-      };
-      return tracks[id];
+      // if (createTrackDto.artistId) {data.artistId = createTrackDto.artistId}
+      // artistId: createTrackDto.artistId || null, // refers to Artist
+      // albumId: createTrackDto.albumId || null, // refers to Album
+      return await this.prisma.track.create({
+        data: {
+          id: uuidv4(),
+          name: createTrackDto.name,
+          duration: createTrackDto.duration, // integer number
+        },
+      });
     } else {
       throw new BadRequestException('Request is not correct');
     }
   }
 
-  findAll() {
-    return Object.values(tracks);
+  async findAll() {
+    return await this.prisma.track.findMany();
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     if (uuidValidate(id)) {
-      if (id in tracks) {
-        return tracks[id];
+      const track = await this.prisma.track.findUnique({ where: { id: id } });
+      if (track) {
+        return track;
       } else {
         throw new NotFoundException('Track is not found');
       }
@@ -47,38 +51,47 @@ export class TrackService {
     }
   }
 
-  update(id: string, updateTrackDto: UpdateTrackDto) {
+  async update(id: string, updateTrackDto: UpdateTrackDto) {
     if (
       'name' in updateTrackDto &&
       updateTrackDto.name &&
       'duration' in updateTrackDto &&
-      typeof updateTrackDto.duration === 'number'
+      typeof updateTrackDto.duration === 'number' &&
+      uuidValidate(id)
     ) {
-      if (uuidValidate(id)) {
-        if (id in tracks) {
-          Object.keys(updateTrackDto).forEach((key) => {
-            tracks[key] = updateTrackDto[key];
-          });
-        } else {
-          throw new NotFoundException('Track is not found');
-        }
+      const track = await this.prisma.track.findUnique({ where: { id: id } });
+      if (track) {
+        return await this.prisma.track.update({
+          where: {
+            id: id,
+          },
+          data: {
+            name: updateTrackDto.name,
+            duration: updateTrackDto.duration,
+          },
+        });
       } else {
-        throw new BadRequestException('Track id is not correct');
+        throw new NotFoundException('Track is not found');
       }
     } else {
       throw new BadRequestException('Request is not correct');
     }
   }
 
-  remove(id: string) {
+  async remove(id: string) {
     if (uuidValidate(id)) {
-      if (id in tracks) {
-        delete tracks[id];
+      const track = await this.prisma.track.findUnique({ where: { id: id } });
+      if (track) {
+        return await this.prisma.track.delete({
+          where: {
+            id: id,
+          },
+        });
       } else {
         throw new NotFoundException('Track is not found');
       }
     } else {
-      throw new BadRequestException('Track id is not correct');
+      throw new BadRequestException('Request id is not correct');
     }
   }
 }

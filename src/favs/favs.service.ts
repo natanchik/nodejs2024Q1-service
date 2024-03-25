@@ -2,93 +2,166 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnprocessableEntityException,
 } from '@nestjs/common';
-import { favs } from './entities/fav.entity';
-import { artists } from 'src/artist/entities/artist.entity';
-import { albums } from 'src/album/entities/album.entity';
-import { tracks } from 'src/track/entities/track.entity';
+
 import { validate as uuidValidate } from 'uuid';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class FavsService {
-  findAll() {
-    return {
-      artists: [...favs.artists.map((id) => artists[id])],
-      albums: [...favs.albums.map((id) => albums[id])],
-      tracks: [...favs.tracks.map((id) => tracks[id])],
-    };
+  constructor(private prisma: PrismaService) {}
+
+  async findAll() {
+    return await this.prisma.fav.findMany();
   }
 
-  addTrack(id: string) {
+  async addTrack(id: string) {
     if (uuidValidate(id)) {
-      if (id in tracks) {
-        favs.tracks = [...new Set(...favs.tracks, id)];
-        return tracks[id];
+      const track = await this.prisma.track.findUnique({ where: { id: id } });
+      if (track) {
+        const favs = await this.prisma.fav.findUnique({
+          where: { id },
+          select: {
+            tracks: true,
+          },
+        });
+        await this.prisma.fav.update({
+          data: {
+            tracks: {
+              set: [...favs.tracks, id],
+            },
+          },
+          where: { id },
+        });
       } else {
-        throw new UnprocessableEntityException(`Track doesn't exist`);
+        throw new NotFoundException(`Track doesn't exist`);
       }
     } else {
-      throw new BadRequestException('Track id is not correct');
+      throw new BadRequestException('Request is not correct');
     }
   }
 
-  addAlbum(id: string) {
+  async addAlbum(id: string) {
     if (uuidValidate(id)) {
-      if (id in albums) {
-        favs.albums = [...new Set(...favs.albums, id)];
-        return albums[id];
+      const album = await this.prisma.album.findUnique({ where: { id: id } });
+      if (album) {
+        const favs = await this.prisma.fav.findUnique({
+          where: { id },
+          select: {
+            albums: true,
+          },
+        });
+        await this.prisma.fav.update({
+          data: {
+            albums: {
+              set: [...favs.albums, id],
+            },
+          },
+          where: { id },
+        });
       } else {
-        throw new UnprocessableEntityException(`Album doesn't exist`);
+        throw new NotFoundException(`Album doesn't exist`);
       }
     } else {
-      throw new BadRequestException('Album id is not correct');
+      throw new BadRequestException('Request is not correct');
     }
   }
 
-  addArtist(id: string) {
+  async addArtist(id: string) {
     if (uuidValidate(id)) {
-      if (id in artists) {
-        favs.artists = [...new Set(...favs.artists, id)];
-        return artists[id];
+      const artist = await this.prisma.artist.findUnique({ where: { id: id } });
+      if (artist) {
+        const favs = await this.prisma.fav.findUnique({
+          where: { id },
+          select: {
+            artists: true,
+          },
+        });
+        await this.prisma.fav.update({
+          data: {
+            artists: {
+              set: [...favs.artists, id],
+            },
+          },
+          where: { id },
+        });
       } else {
-        throw new UnprocessableEntityException(`Artist doesn't exist`);
+        throw new NotFoundException(`Artist doesn't exist`);
       }
     } else {
-      throw new BadRequestException('Artist id is not correct');
+      throw new BadRequestException('Request is not correct');
     }
   }
 
-  removeTrack(id: string) {
+  async removeTrack(id: string) {
     if (uuidValidate(id)) {
-      if (id in favs.tracks) {
-        delete favs.tracks[id];
+      const favs = await this.prisma.fav.findUnique({
+        where: { id },
+        select: {
+          tracks: true,
+        },
+      });
+      if (favs.tracks.includes(id)) {
+        await this.prisma.fav.update({
+          data: {
+            tracks: {
+              set: [...favs.tracks.filter((track) => track !== id)],
+            },
+          },
+          where: { id },
+        });
       } else {
         throw new NotFoundException('Track is not found');
       }
     } else {
-      throw new BadRequestException('Track id is not correct');
+      throw new BadRequestException('Request is not correct');
     }
   }
 
-  removeAlbum(id: string) {
+  async removeAlbum(id: string) {
     if (uuidValidate(id)) {
-      if (id in favs.albums) {
-        delete favs.albums[id];
+      const favs = await this.prisma.fav.findUnique({
+        where: { id },
+        select: {
+          albums: true,
+        },
+      });
+      if (favs.albums.includes(id)) {
+        await this.prisma.fav.update({
+          data: {
+            albums: {
+              set: [...favs.albums.filter((album) => album !== id)],
+            },
+          },
+          where: { id },
+        });
       } else {
-        throw new NotFoundException('Album is not found');
+        throw new NotFoundException('Track is not found');
       }
     } else {
       throw new BadRequestException('Album id is not correct');
     }
   }
 
-  removeArtist(id: string) {
+  async removeArtist(id: string) {
     if (uuidValidate(id)) {
-      if (id in favs.artists) {
-        delete favs.artists[id];
+      const favs = await this.prisma.fav.findUnique({
+        where: { id },
+        select: {
+          artists: true,
+        },
+      });
+      if (favs.artists.includes(id)) {
+        await this.prisma.fav.update({
+          data: {
+            artists: {
+              set: [...favs.artists.filter((artist) => artist !== id)],
+            },
+          },
+          where: { id },
+        });
       } else {
-        throw new NotFoundException('Artist is not found');
+        throw new NotFoundException('Track is not found');
       }
     } else {
       throw new BadRequestException('Artist id is not correct');

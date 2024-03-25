@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 
 // initialize Prisma Client
 const prisma = new PrismaClient();
@@ -9,6 +10,7 @@ async function main() {
     where: { login: 'defaultUser1' },
     update: {},
     create: {
+      id: uuidv4(),
       login: 'defaultUser1',
       password: 'defaultPassword',
     },
@@ -18,6 +20,7 @@ async function main() {
     where: { login: 'defaultUser2' },
     update: {},
     create: {
+      id: uuidv4(),
       login: 'defaultUser2',
       password: 'defaultPassword2',
     },
@@ -27,6 +30,7 @@ async function main() {
     where: { name: 'defaultTrack' },
     update: {},
     create: {
+      id: uuidv4(),
       name: 'defaultTrack',
       duration: 1,
     },
@@ -36,6 +40,7 @@ async function main() {
     where: { name: 'defaultAlbum' },
     update: {},
     create: {
+      id: uuidv4(),
       name: 'defaultAlbum',
       year: 2000,
     },
@@ -45,6 +50,7 @@ async function main() {
     where: { name: 'defaultArtist' },
     update: {},
     create: {
+      id: uuidv4(),
       name: 'defaultArtist',
       grammy: false,
     },

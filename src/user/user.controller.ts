@@ -21,23 +21,23 @@ export class UserController {
 
   @ApiOperation({ summary: 'User creation' })
   @Get()
-  getUsers() {
+  async getUsers() {
     return this.UserService.getUsers();
   }
 
   @Get(':id')
-  getUserById(@Param('id') id: string) {
+  async getUserById(@Param('id') id: string) {
     return this.UserService.getUserById(id);
   }
 
   @Post()
-  CreateUserDto(@Body() CreateUserDto: CreateUserDto) {
+  async CreateUserDto(@Body() CreateUserDto: CreateUserDto) {
     return this.UserService.CreateUserDto(CreateUserDto);
   }
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
-  UpdatePasswordDto(
+  async UpdatePasswordDto(
     @Param('id') id: string,
     @Body() UpdatePasswordDto: UpdatePasswordDto,
   ) {
@@ -46,7 +46,7 @@ export class UserController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  DeleteUserById(@Param('id') id: string) {
+  async DeleteUserById(@Param('id') id: string) {
     return this.UserService.DeleteUserById(id);
   }
 }

@@ -6,5 +6,3 @@ export interface User {
   createdAt: number;
   updatedAt: number;
 }
-
-export const users: { [id: string]: User } = {};

@@ -5,5 +5,3 @@ export class Track {
   albumId: string | null; // refers to Album
   duration: number; // integer number
 }
-
-export const tracks: { [id: string]: Track } = {};

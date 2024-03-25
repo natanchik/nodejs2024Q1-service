@@ -8,36 +8,36 @@ export class FavsController {
   constructor(private readonly favsService: FavsService) {}
 
   @Get()
-  findAll() {
-    return this.favsService.findAll();
+  async findAll() {
+    return await this.favsService.findAll();
   }
 
   @Post('track/:id')
-  addTrack(@Param('id') id: string) {
-    return this.favsService.addTrack(id);
+  async addTrack(@Param('id') id: string) {
+    return await this.favsService.addTrack(id);
   }
 
   @Post('album/:id')
-  addAlbum(@Param('id') id: string) {
-    return this.favsService.addAlbum(id);
+  async addAlbum(@Param('id') id: string) {
+    return await this.favsService.addAlbum(id);
   }
   @Post('artist/:id')
-  addArtist(@Param('id') id: string) {
-    return this.favsService.addArtist(id);
+  async addArtist(@Param('id') id: string) {
+    return await this.favsService.addArtist(id);
   }
 
   @Delete('track/:id')
-  removeTrack(@Param('id') id: string) {
-    return this.favsService.removeTrack(id);
+  async removeTrack(@Param('id') id: string) {
+    return await this.favsService.removeTrack(id);
   }
 
   @Delete('album/:id')
-  removeAlbum(@Param('id') id: string) {
-    return this.favsService.removeAlbum(id);
+  async removeAlbum(@Param('id') id: string) {
+    return await this.favsService.removeAlbum(id);
   }
 
   @Delete('artist/:id')
-  removeArtist(@Param('id') id: string) {
-    return this.favsService.removeArtist(id);
+  async removeArtist(@Param('id') id: string) {
+    return await this.favsService.removeArtist(id);
   }
 }

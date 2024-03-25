@@ -36,6 +36,12 @@ Make sure that nothing is running on port 5432 of your machine. To start the pos
 docker-compose up
 ```
 
+Run migrations to create the actual tables in the database. To generate and execute your first migration, run the following command in the terminal:
+
+```
+npx prisma migrate dev --name "init"
+```
+
 ## Testing
 
 After application running open new terminal and enter:

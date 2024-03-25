@@ -1,24 +1,29 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 
-import { users } from './users';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 
 @Injectable()
 export class UserService {
-  getUsers() {
-    return Object.values(users);
+  constructor(private prisma: PrismaService) {}
+
+  async getUsers() {
+    console.log('hi from getUsers');
+    return await this.prisma.user.findMany();
   }
 
-  getUserById(id: string) {
+  async getUserById(id: string) {
     if (uuidValidate(id)) {
-      if (id in users) {
-        return users[id];
+      const user = await this.prisma.user.findUnique({ where: { id: id } });
+      if (user) {
+        return user;
       } else {
         throw new NotFoundException('User is not found');
       }
@@ -27,63 +32,60 @@ export class UserService {
     }
   }
 
-  CreateUserDto(CreateUserDto: CreateUserDto) {
-    if ('login' in UpdatePasswordDto && 'password' in UpdatePasswordDto) {
-      const id = uuidv4();
-      users[id] = {
-        id: id,
-        login: CreateUserDto.login,
-        password: CreateUserDto.password,
-        version: 1,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-      return {
-        id: id,
-        login: users[id].login,
-        version: 1,
-        createdAt: users[id].createdAt,
-        updatedAt: users[id].updatedAt,
-      };
+  async CreateUserDto(CreateUserDto: CreateUserDto) {
+    if ('login' in CreateUserDto && 'password' in CreateUserDto) {
+      return await this.prisma.user.create({
+        data: {
+          id: uuidv4(),
+          login: CreateUserDto.login,
+          password: CreateUserDto.password,
+        },
+      });
     } else {
       throw new BadRequestException('Request is not correct');
     }
   }
 
-  UpdatePasswordDto(UpdatePasswordDto: UpdatePasswordDto, id: string) {
+  async UpdatePasswordDto(UpdatePasswordDto: UpdatePasswordDto, id: string) {
     if (
       'oldPassword' in UpdatePasswordDto &&
-      'newPassword' in UpdatePasswordDto
+      'newPassword' in UpdatePasswordDto &&
+      uuidValidate(id)
     ) {
-      if (uuidValidate(id)) {
-        if (id in users) {
-          if ((users[id].password = UpdatePasswordDto.oldPassword)) {
-            users[id].password = UpdatePasswordDto.newPassword;
-            users[id].version = ++users[id].version;
-            users[id].updatedAt = Date.now();
-          }
-          return {
-            id: id,
-            login: users[id].login,
-            version: users[id].version,
-            createdAt: users[id].createdAt,
-            updatedAt: users[id].updatedAt,
-          };
+      const user = await this.prisma.user.findUnique({ where: { id: id } });
+      if (user) {
+        if (user.password === UpdatePasswordDto.oldPassword) {
+          return await this.prisma.user.update({
+            where: {
+              id: id,
+            },
+            data: {
+              password: UpdatePasswordDto.newPassword,
+              version: {
+                increment: 1,
+              },
+            },
+          });
         } else {
-          throw new NotFoundException('User is not found');
+          throw new ForbiddenException('Password is not correct');
         }
       } else {
-        throw new BadRequestException('User id is not correct');
+        throw new NotFoundException('User is not found');
       }
     } else {
       throw new BadRequestException('Request is not correct');
     }
   }
 
-  DeleteUserById(id: string) {
+  async DeleteUserById(id: string) {
     if (uuidValidate(id)) {
-      if (id in users) {
-        delete users[id];
+      const user = await this.prisma.user.findUnique({ where: { id: id } });
+      if (user) {
+        return await this.prisma.user.delete({
+          where: {
+            id: id,
+          },
+        });
       } else {
         throw new NotFoundException('User is not found');
       }

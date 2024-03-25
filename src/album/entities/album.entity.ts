@@ -4,5 +4,3 @@ export class Album {
   year: number;
   artistId: string | null; // refers to Artist
 }
-
-export const albums: { [id: string]: Album } = {};
